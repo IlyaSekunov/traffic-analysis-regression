@@ -1,188 +1,162 @@
-## 📁 Структура проекта
+# Salary Prediction Model
 
-```
-traffic_analysis/
-├── parsing/                    # Исходные данные для обучения
-│   ├── x_data.npy             # Признаки для обучения (по умолчанию)
-│   └── y_data.npy             # Целевые значения для обучения (по умолчанию)
-├── regression/
-│   ├── app.py                 # Основной скрипт с CLI интерфейсом
-│   ├── model.py               # Модель машинного обучения
-│   ├── config.py              # Конфигурация приложения
-│   ├── utils.py               # Вспомогательные функции
-│   ├── requirements.txt       # Зависимости проекта
-│   ├── README.md              # Эта документация
-│   └── resources/             # Папка для сохранения весов модели
-│       ├── trained_model.joblib
-│       └── scaler.joblib
-└── .gitignore
-```
+This project implements a machine learning model for predicting salaries based on features extracted from hh.ru resume data. It provides a command-line interface for training models and making predictions.
 
-## 🚀 Установка
+## Project Structure
 
-1. Клонируйте репозиторий или скопируйте файлы проекта
-2. Перейдите в папку проекта:
-   ```bash
-   cd traffic_analysis/regression
-   ```
-3. Установите зависимости:
-   ```bash
-   pip install -r requirements.txt
-   ```
-   
-   Если файла requirements.txt нет, установите зависимости вручную:
-   ```bash
-   pip install numpy scikit-learn joblib
-   ```
+- `app.py` - Main CLI application with predict and train commands
+- `model.py` - SalaryModel class implementing the prediction logic
+- `config.py` - Configuration settings and paths
+- `utils.py` - Helper functions for data loading, preprocessing, and model persistence
+- `requirements.txt` - Project dependencies
 
-## 📊 Подготовка данных
+## Features
 
-Для обучения модели подготовьте два файла в формате `.npy`:
+- **Random Forest Regressor** for salary prediction
+- **Feature scaling** using StandardScaler
+- **Model persistence** with joblib serialization
+- **Train/test split** for model evaluation
+- **NaN handling** and data validation
+- **Comprehensive logging** for debugging
 
-1. **Признаки (X)**: матрица формата `(n_samples, n_features)` в файле `x_data.npy`
-2. **Целевые значения (y)**: вектор формата `(n_samples,)` в файле `y_data.npy` (зарплаты в рублях)
+## Installation
 
-По умолчанию модель ищет эти файлы в папке `../parsing/` относительно папки `regression`.
-
-## 🎯 Использование
-
-### 1. Предсказание зарплат (основной сценарий)
+1. Clone the repository
+2. Install dependencies:
 
 ```bash
-# Использование файлов по умолчанию из папки parsing
-python app.py predict ../parsing/x_data.npy
-
-# Использование своих данных
-python app.py predict path/to/your_data.npy
+pip install -r requirements.txt
 ```
 
-**Что происходит:**
-- Если модель уже обучена и сохранена в `resources/`, она загружается
-- Если модель не обучена, она обучается на данных по умолчанию из `parsing/`
-- Делаются предсказания для входных данных
-- Вывод: список зарплат в рублях (float), по одному на строку
+## Usage
 
-**Пример вывода:**
-```
-75000.50
-72000.00
-85000.25
-...
-```
+The application supports two main commands:
 
-### 2. Обучение модели на своих данных
+### Training a Model
+
+Train a new model on your data:
 
 ```bash
-# Обучение на данных из папки parsing
-python app.py train ../parsing/x_data.npy ../parsing/y_data.npy
-
-# Обучение на своих данных
-python app.py train path/to/X_train.npy path/to/y_train.npy
+python app.py train path/to/x_data.npy path/to/y_data.npy
 ```
 
-**Что происходит:**
-- Удаляется предыдущая модель (если есть)
-- Обучается новая модель на указанных данных
-- Выводятся метрики качества (R² и MSE)
-- Модель сохраняется в папку `resources/`
+This will:
+- Load the training data from `.npy` files
+- Split data into training and testing sets
+- Scale features using StandardScaler
+- Train a Random Forest Regressor
+- Save the model and scaler to the `resources/` directory
+- Display R² and MSE metrics
 
-**Пример вывода:**
+### Making Predictions
+
+Use a trained model to predict salaries:
+
+```bash
+python app.py predict path/to/x_data.npy
+```
+
+This will:
+- Load the trained model and scaler from `resources/`
+- Process the input features
+- Output salary predictions (one per line)
+
+## Configuration
+
+The `config.py` file contains all configurable parameters:
+
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| `BASE_DIR` | Project root directory | Auto-detected |
+| `PARSING_DIR` | Directory with training data | `../parsing/` |
+| `RESOURCES_DIR` | Directory for saved models | `./resources/` |
+| `TRAIN_X_FILE` | Default training features path | `../parsing/x_data.npy` |
+| `TRAIN_Y_FILE` | Default training targets path | `../parsing/y_data.npy` |
+| `MODEL_FILENAME` | Saved model filename | `trained_model.joblib` |
+| `SCALER_FILENAME` | Saved scaler filename | `scaler.joblib` |
+| `TEST_SIZE` | Proportion for test split | 0.2 |
+| `RANDOM_STATE` | Random seed for reproducibility | 42 |
+
+## Model Details
+
+The project uses a **Random Forest Regressor** with the following characteristics:
+- 100 estimators (trees)
+- Parallel processing (`n_jobs=-1`)
+- Features are standardized using StandardScaler
+- Automatic handling of NaN values (removal during training, mean imputation during prediction)
+
+## Input Data Format
+
+### Training Data
+- `X.npy`: Feature matrix with shape `(n_samples, n_features)`
+- `y.npy`: Target values (salaries) with shape `(n_samples,)`
+
+### Prediction Data
+- `X.npy`: Feature matrix with shape `(n_samples, n_features)`
+
+## Output Format
+
+Predictions are output as one salary value per line, rounded to 2 decimal places (rubles and kopecks).
+
+## Logging and Debugging
+
+The `utils.py` module provides comprehensive logging:
+
+- Data loading status and shapes
+- NaN value detection and handling
+- Training progress and metrics
+- Model saving/loading confirmation
+
+## Error Handling
+
+The application includes robust error handling:
+- File existence validation
+- Extension checking (.npy files only)
+- Data shape compatibility verification
+- NaN and infinite value detection
+- Graceful error messages with emoji indicators
+
+## Program Output Examples
+
+### Training
 ```
 🧠 Обучение модели на данных:
    X: ../parsing/x_data.npy
    Y: ../parsing/y_data.npy
+🗑️  Удаляю предыдущую модель...
 📥 Загрузка данных для обучения:
    X: ../parsing/x_data.npy
    Y: ../parsing/y_data.npy
-📊 Данные для обучения: 1000 образцов, 20 признаков
+📊 Данные для обучения: 1500 образцов, 8 признаков
 🧠 Обучение RandomForestRegressor...
 📈 РЕЗУЛЬТАТЫ ОБУЧЕНИЯ:
-   R²: 0.65
-   MSE: 800000.0
-💾 Модель сохранена в traffic_analysis/regression/resources
+   R²: 0.85
+   MSE: 1250000.00
+💾 Модель сохранена в ./resources
 ✅ Модель успешно обучена и сохранена
 ```
 
-### 3. Получение справки
-
-```bash
-# Общая справка
-python app.py --help
-
-# Справка по команде predict
-python app.py predict --help
-
-# Справка по команде train
-python app.py train --help
+### Prediction
+```
+📥 Загружено 500 образцов для предсказания
+✅ Сделано 500 предсказаний
+45000.00
+52000.00
+38500.00
+...
 ```
 
-## 💾 Сохранение модели
+## Dependencies
 
-После обучения модель сохраняется в папку `resources/`:
-- `trained_model.joblib` - обученная модель
-- `scaler.joblib` - параметры масштабирования
+- Python 3.6+
+- pandas
+- numpy
+- scikit-learn
+- joblib
 
-При следующем запуске `predict` модель загружается из этих файлов, а не обучается заново.
+## Notes
 
-## 🔄 Переобучение модели
-
-Чтобы переобучить модель на новых данных:
-
-```bash
-# Удалить сохраненную модель
-rm -rf traffic_analysis/regression/resources
-
-# Или использовать команду train
-python app.py train ../parsing/x_data.npy ../parsing/y_data.npy
-```
-
-## 🐛 Возможные проблемы и решения
-
-### 1. Файлы данных не найдены
-```
-❌ Файл не найден: ../parsing/x_data.npy
-```
-**Решение**: Убедитесь, что файлы существуют по указанному пути.
-
-### 2. Ошибка импорта
-```
-ModuleNotFoundError: No module named 'sklearn'
-```
-**Решение**: Установите scikit-learn:
-```bash
-pip install scikit-learn
-```
-
-### 3. Неправильный формат файлов
-```
-ValueError: Unknown file format
-```
-**Решение**: Убедитесь, что файлы имеют расширение `.npy` и созданы с помощью `numpy.save()`.
-
-### 4. Разные размеры данных
-```
-ValueError: X and y have different number of samples
-```
-**Решение**: Убедитесь, что количество строк в X и y совпадает.
-
-## 📝 Пример полного рабочего процесса
-
-```bash
-# 1. Перейти в папку проекта
-cd traffic_analysis/regression
-
-# 2. Установить зависимости
-pip install numpy scikit-learn joblib
-
-# 3. Поместить данные в папку parsing
-#    (убедитесь, что есть файлы x_data.npy и y_data.npy)
-
-# 4. Обучить модель
-python app.py train ../parsing/x_data.npy ../parsing/y_data.npy
-
-# 5. Сделать предсказания
-python app.py predict ../parsing/x_data.npy
-
-# 6. Сохранить предсказания в файл
-python app.py predict ../parsing/x_data.npy > predictions.txt
-```
+- The model automatically creates the `resources/` directory if it doesn't exist
+- Previous models are overwritten when training with new data
+- During prediction, missing values (NaN) are replaced with column means
+- The model uses mean imputation only for prediction; training data with NaN is filtered out
